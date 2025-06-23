@@ -1,6 +1,11 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { authMiddleware } from '@clerk/nextjs';
 
-export default clerkMiddleware();
+// Use the authMiddleware which is more Edge-compatible
+export default authMiddleware({
+  // Add any configuration options here if needed
+  // For example:
+  // publicRoutes: ['/'],
+});
 
 export const config = {
   matcher: [
