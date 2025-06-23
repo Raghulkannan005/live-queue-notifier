@@ -1,4 +1,4 @@
-import { authMiddleware } from '@clerk/nextjs';
+import { authMiddleware } from '@clerk/nextjs/server';
 
 // Use the authMiddleware which is more Edge-compatible
 export default authMiddleware({
