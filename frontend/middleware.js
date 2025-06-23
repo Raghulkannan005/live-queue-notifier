@@ -1,11 +1,10 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default authMiddleware({
-  publicRoutes: ["/", "/about"],
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    "/((?!_next|.*\\..*).*)",
+    "/((?!_next|.*\\..*).*)",     // Matches all except static files
+    "/(api|trpc)(.*)",            // Protect API/trpc routes too
   ],
 };
