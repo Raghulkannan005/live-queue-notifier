@@ -1,13 +1,12 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { authMiddleware } from "@clerk/nextjs/server";
 
 export default authMiddleware({
   publicRoutes: ["/", "/about", "/api/public"],
-  ignoredRoutes: ["/api/webhook(.*)"], // Optional
+  ignoredRoutes: ["/api/webhook(.*)"],
 });
 
 export const config = {
   matcher: [
-    // Protect everything except public/static files
     "/((?!_next|.*\\..*|favicon.ico).*)",
   ],
 };
