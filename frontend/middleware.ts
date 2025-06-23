@@ -1,8 +1,6 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, auth } from "@clerk/nextjs/server";
 
-export default clerkMiddleware({
-  publicRoutes: ["/", "/about"],
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
