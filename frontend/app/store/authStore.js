@@ -8,14 +8,19 @@ const useAuthStore = create((set) => ({
         name: '',
         email: '',
     },
+
     isAuthenticated: false,
+
     setUser: (user) => set({ user, isAuthenticated: true }),
+
     clearUser: () =>
         set({
             user: { image: '', name: '', email: '' },
             isAuthenticated: false,
         }),
+
     fetchSession: async () => {
+
         const session = await getSession();
         if (session && session.user) {
             set({ user: session.user, isAuthenticated: true });
@@ -25,6 +30,7 @@ const useAuthStore = create((set) => ({
                 isAuthenticated: false,
             });
         }
+
     },
 }));
 
