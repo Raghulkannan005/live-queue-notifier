@@ -1,0 +1,34 @@
+import mongoose from 'mongoose';
+
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: {
+    type: String,
+    unique: true
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'owner', 'manager', 'user'],
+    default: 'user'
+  },
+  profileImage: {
+    type: String,
+    default: "https://as2.ftcdn.net/v2/jpg/14/12/74/21/1000_F_1412742147_9Zi2cMBHUV86lgIn9lDfkoAgf8KFr1eT.jpg"
+  },
+  roomsOwned: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Room'
+  }],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    currentQueues : [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Queue'
+    }]
+});
+
+const User = mongoose.model('User', userSchema);
+
+export default User;
