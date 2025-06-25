@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { login } from '@/lib/actions/auth';
+import AuthNav from '@/components/AuthNav';
 
 const Header = () => {
-
     return (
         <nav className="w-full flex justify-between items-center py-6 px-8 bg-white/90 backdrop-blur-md shadow-lg border-b border-slate-200 sticky top-0 z-10">
             <div className="text-2xl font-extrabold text-cyan-900 tracking-wide flex items-center">
@@ -23,15 +22,10 @@ const Header = () => {
                 >
                     About
                 </Link>
-                <button onClick={login} className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors">
-                    Login
-                </button>
-
+                <AuthNav />
             </div>
         </nav>
     );
 };
 
 export default Header;
-
-

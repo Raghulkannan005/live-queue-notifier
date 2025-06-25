@@ -1,7 +1,7 @@
 export const metadata = {
     title: 'Waitless'
 };
-import Features from "./components/Features";
+import Features from "@/components/Features";
 
 export default function Home() {
     return (
@@ -15,7 +15,7 @@ export default function Home() {
                     Waitless helps you avoid long queues by providing real-time wait time updates for your favorite places. Enjoy more, wait less!
                 </p>
                 <a
-                    href="/login"
+                    href="/"
                     className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white font-semibold px-10 py-4 rounded-full shadow-xl transition duration-300 transform hover:scale-105"
                 >
                     Get Started
