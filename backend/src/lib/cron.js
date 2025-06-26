@@ -1,15 +1,18 @@
-import cron from 'cron'
-import https from "https"
+import { CronJob } from 'cron';
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
-const { CronJob } = cron;
+dotenv.config();
 
-const job = new CronJob('0 */14 * * * *', () => {
-    https.get(process.env.API_URL, (res) => {
-        console.log(`Cron job executed at ${new Date().toLocaleString()}`);
-        console.log(`Response status code: ${res.statusCode}`);
-    }).on('error', (err) => {
-        console.error(`Error during cron job execution: ${err.message}`);
-    });
+const job = new CronJob('* */14 * * * *', async () => {
+  const url = `${process.env.API_URL}/test`;
+
+  try {
+    const res = await fetch(url);
+    console.log(`[CRON] ${new Date().toLocaleString()} - Status: ${res.status}`);
+  } catch (err) {
+    console.error(`[CRON] Fetch failed:`, err.message);
+  }
 });
 
 export default job;
