@@ -5,7 +5,7 @@ import AuthNav from '@/components/AuthNav';
 
 const Header = () => {
     return (
-        <nav className="w-full flex justify-between items-center py-6 px-8 bg-white/90 backdrop-blur-md shadow-lg border-b border-slate-200 sticky top-0 z-10">
+        <nav className="w-full flex justify-between items-center py-6 px-8 bg-white/90 backdrop-blur-md shadow-lg border-b border-slate-200 sticky top-0 z-50">
             <div className="text-2xl font-extrabold text-cyan-900 tracking-wide flex items-center">
                 <span className="text-cyan-600 mr-1">⏱</span> Waitless
             </div>
