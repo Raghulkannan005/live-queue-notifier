@@ -2,7 +2,7 @@
 
 const Footer = () => {
   return (
-     <footer className="w-full py-8 text-center text-slate-600 bg-white border-t border-slate-200">
+     <footer className="w-full py-8 text-center text-slate-600 bg-white border-t max-h-24 bottom-0 border-slate-200">
         <div className="container mx-auto">
             <div className="flex justify-center mb-4">
                 <span className="text-2xl font-bold text-cyan-700">Waitless</span>

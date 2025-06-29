@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Features from "../components/Features";
+import Features from "../components/layout/Features";
 
 export const metadata = {
     title: 'About | Waitless'
@@ -40,7 +40,7 @@ export default function About() {
                         href="https://github.com/raghulkannan-s/live-queue-notifier"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white font-semibold px-8 py-3 rounded-full shadow-xl transition duration-300 transform hover:scale-105"
+                        className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white font-semibold px-8 py-3 rounded-full shadow-xl transition duration-100 transform hover:scale-105"
                     >
                         🚀 View on GitHub
                     </a>

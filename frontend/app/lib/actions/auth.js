@@ -4,7 +4,7 @@ import { signIn, signOut, auth } from "@/lib/auth";
 
 
 export const login = async () =>{
-    await signIn("google", { redirectTo: "/user" });
+    await signIn("google", { redirectTo: "/" });
 }
 
 export const logout = async () => {
@@ -14,3 +14,4 @@ export const logout = async () => {
 export const getSession = async () => {
     return await auth();
 }
+
