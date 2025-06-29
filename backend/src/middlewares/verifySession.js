@@ -1,0 +1,18 @@
+import jwt from "jsonwebtoken";
+
+const verifySession = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET);
+    console.log("Token verified successfully:", decoded);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error("Token verification failed:", err);
+    return res.status(401).json({ message: "Token invalid" });
+  }
+};
+
+export default verifySession;

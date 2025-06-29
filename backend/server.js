@@ -1,50 +1,55 @@
-import express from 'express';
+import express from "express";
 import http from "http";
 import https from "https";
-import {Server} from "socket.io"
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
-import { connectDB } from './src/database/db.js';
-import job from './src/lib/cron.js';
+import { connectDB } from "./src/database/db.js";
+import job from "./src/lib/cron.js";
+import { createSocketServer } from "./src/config/socket.js";
+import authRouter from "./src/routes/authRouter.js";
+import queueRouter from "./src/routes/queueRouter.js";
+import roomRouter from "./src/routes/roomRouter.js";
 
 dotenv.config();
 
-const url = process.env.API_URL
-const client = url.startsWith('https') ? https : http;
+const app = express();
+app.use(express.json());
+app.use(helmet());
+
+const allowedOrigins = [process.env.FRONTEND_URL];
+app.use(cors({
+  origin: allowedOrigins
+}));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+const url = process.env.API_URL;
+const client = url.startsWith("https") ? https : http;
 
 await connectDB();
 job.start();
 
-const app = express();
 const server = client.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+
+const io = createSocketServer(server);
+
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
-const PORT = process.env.PORT || 5000;
 
-let clients = []
-
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-  clients.push(socket.id);
-  io.emit('message', `User ${socket.id} has connected. No. of clients: ${clients.length}`);
-
-  socket.on('message', (msg) => {
-    console.log('Message:', msg);
-    clients.forEach(clientId => {
-      io.to(clientId).emit('message', `${msg} Sent to ${clients.length} clients`);
-    });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    clients = clients.filter(id => id !== socket.id);
-    io.emit('message', `User ${socket.id} has disconnected. No. of clients: ${clients.length}`);
-  });
-});
+app.use("/auth", authRouter);
+app.use("/queue", queueRouter);
+app.use("/room", roomRouter);
 
 app.get("/", (req, res) => {
   res.sendFile(process.cwd() + "/welcome.html");
@@ -54,9 +59,12 @@ app.get("/test", (req, res) => {
   res.json({ message: "Test endpoint working" });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err.message);
+  res.status(500).json({ message: "Internal server error" });
 });
 
-
-
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
