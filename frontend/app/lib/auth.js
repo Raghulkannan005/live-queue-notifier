@@ -2,6 +2,9 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
@@ -9,42 +12,36 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google-login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            googleId: account.providerAccountId,
-          }),
-        });
-      } catch (err) {
-        console.error("SignIn callback failed:", err);
+    async jwt({ token, account, user }) {
+      if (account && user) {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google-login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              googleId: account.providerAccountId,
+            }),
+          });
+          const data = await res.json();
+          token.backendToken = data.token;
+          token.role = data.user.role;
+          token.userId = data.user._id;
+        } catch (err) {
+          console.error("JWT callback backend login failed:", err);
+        }
       }
-      return true;
+      return token;
     },
 
-    async session({ session }) {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/get-role`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: session?.user?.email,
-          }),
-        });
-        const data = await res.json();
-        session.user.role = data.role || "user";
-      } catch (err) {
-        console.error("Session role enrich failed:", err);
-        session.user.role = "user";
-      }
-
+    async session({ session, token }) {
+      session.user.token = token.backendToken || null;
+      session.user.role = token.role || "user";
+      session.user.id = token.userId || null;
       return session;
     },
   },

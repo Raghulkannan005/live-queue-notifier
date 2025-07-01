@@ -6,13 +6,27 @@ import useAuthStore from '@/store/authStore';
 import { useEffect, useState } from 'react';
 
 const Header = () => {
-    const { fetchSession, fetchToken, isAuthenticated, user, clearUser } = useAuthStore();
+    const { fetchSession, isAuthenticated, user, clearUser } = useAuthStore();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     useEffect(() => {
         fetchSession();
-        fetchToken();
-    }, []);
+        if(isAuthenticated){
+            window.location.href = '/dashboard';
+        }
+    },[])
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isDropdownOpen && !event.target.closest('.dropdown')) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isDropdownOpen]);
 
     const handleLogout = () => {
         logout();
@@ -41,7 +55,7 @@ const Header = () => {
                     {/* Navigation Links */}
                     <div className="hidden md:flex items-center space-x-8">
                         <Link
-                            href="/"
+                            href="/dashboard"
                             className="relative text-slate-700 hover:text-cyan-600 font-medium text-sm transition-all duration-200 group"
                         >
                             Home
@@ -63,6 +77,15 @@ const Header = () => {
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-600 to-cyan-700 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         )}
+                        { isAuthenticated && user?.role === 'admin' && (
+                                <Link
+                                    href="/admin"
+                                    className="relative text-slate-700 hover:text-cyan-600 font-medium text-sm transition-all duration-200 group"
+                                >
+                                    Admin
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-600 to-cyan-700 group-hover:w-full transition-all duration-300"></span>
+                                </Link>
+                            )}
                     </div>
 
                     {/* Auth Section */}
@@ -75,7 +98,7 @@ const Header = () => {
                                 >
                                     <div className="relative">
                                         <img
-                                            src={user?.image}
+                                            src={user.image}
                                             alt="Profile"
                                             className="w-9 h-9 rounded-full border-2 border-slate-200 group-hover:border-cyan-300 transition-all duration-200 shadow-sm"
                                         />
@@ -101,10 +124,10 @@ const Header = () => {
                                             <p className="text-sm font-medium text-slate-900">{user?.name}</p>
                                             <p className="text-sm text-slate-500 truncate">{user?.email}</p>
                                         </div>
-                                        
+
                                         <div className="py-2">
                                             <Link 
-                                                href="/user"
+                                                href="/profile"
                                                 onClick={() => setIsDropdownOpen(false)}
                                                 className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                                             >
@@ -114,18 +137,6 @@ const Header = () => {
                                                 Profile
                                             </Link>
                                             
-                                            <Link 
-                                                href="/settings"
-                                                onClick={() => setIsDropdownOpen(false)}
-                                                className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                            >
-                                                <svg className="w-4 h-4 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                                Settings
-                                            </Link>
-
                                             <div className="md:hidden">
                                                 <Link 
                                                     href="/rooms"
@@ -139,11 +150,11 @@ const Header = () => {
                                                 </Link>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="border-t border-slate-100 pt-2 mt-2">
                                             <button
                                                 onClick={handleLogout}
-                                                className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                className="flex items-center cursor-pointer w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                             >
                                                 <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -157,7 +168,7 @@ const Header = () => {
                         ) : (
                             <button
                                 onClick={login}
-                                className="relative bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white font-medium px-6 py-2.5 rounded-full transition-all duration-200 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 group overflow-hidden"
+                                className="relative cursor-pointer bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white font-medium px-6 py-2.5 rounded-full transition-all duration-200 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 group overflow-hidden"
                             >
                                 <span className="relative z-10 flex items-center">
                                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">

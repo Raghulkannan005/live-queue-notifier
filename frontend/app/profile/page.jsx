@@ -1,10 +1,26 @@
-"use client";
+'use client';
 
 import useAuthStore from "@/store/authStore";
+import TestSocketLogger from "@/utils/TestSocketLogger";
 
 export default function UserPage() {
+
   const { user } = useAuthStore();
 
+  const runEmitTest = async() => { 
+    try{
+      const res = await fetch("http://localhost:5000/admin/emit", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${user.token}`
+      }
+    });
+    const data = await res.json();
+    console.log("Test emit response:", data);
+  } catch (error) {
+    console.error("Error emitting test event:", error);
+  }
+};
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-slate-50 to-cyan-50 flex flex-col items-center">
@@ -14,6 +30,8 @@ export default function UserPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-2 drop-shadow-lg z-10 relative">
             My Profile
           </h1>
+          <button className="bg-cyan-600 text-white px-4 py-2 rounded-full hover:bg-cyan-700 transition" onClick={runEmitTest}>Test Emit</button>
+          <TestSocketLogger />
           <p className="text-base text-cyan-700 font-semibold tracking-wide uppercase mb-2 z-10 relative">
             Account Overview
           </p>
@@ -21,7 +39,7 @@ export default function UserPage() {
         {user && (
           <div className="w-full bg-white/80 rounded-2xl shadow-lg p-8 flex flex-col items-center gap-8 border border-cyan-100">
             <img
-              src={user.image || "/avatar-placeholder.png"}
+              src={user.image}
               alt="profile"
               className="w-24 h-24 rounded-full shadow object-cover mb-4 border border-cyan-100"
             />

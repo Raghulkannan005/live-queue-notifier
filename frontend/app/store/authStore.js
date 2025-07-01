@@ -9,18 +9,18 @@ const useAuthStore = create(
         image: "",
         name: "",
         email: "",
-        role: ""
+        role: "",
+        id : "",
+        token: ""
       },
       isAuthenticated: false,
-      token: "",
 
       setUser: (user) => set({ user, isAuthenticated: true }),
-      setToken: (token) => set({ token }),
+
       clearUser: () =>
         set({
-          user: { image: "", name: "", email: "", role: "" },
-          isAuthenticated: false,
-          token: "",
+          user: { image: "", name: "", email: "", role: "", id: "", token: "" },
+          isAuthenticated: false
         }),
 
       fetchSession: async () => {
@@ -28,40 +28,16 @@ const useAuthStore = create(
         if (session && session.user) {
           set({
             user: session.user,
-            isAuthenticated: true,
+            isAuthenticated: true
           });
         } else {
           set({
-            user: { image: "", name: "", email: "", role: "" },
+            user: {id: "", image: "", name: "", email: "", role: "", token: "" },
             isAuthenticated: false,
           });
         }
       },
 
-      fetchToken: async () => {
-        try {
-            const session = await getSession();
-            if (!session || !session.user) { return; }
-            const { email, role } = session.user;
-            const res = await fetch("/api/jwt/sign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              role
-            }),
-          });
-
-          const data = await res.json();
-          if (data.token) {
-            set({ token: data.token });
-          } else {
-            console.error("Token missing in response");
-          }
-        } catch (err) {
-          console.error("Error fetching token in Zustand:", err);
-        }
-      }
     }),
     {
       name: "auth-storage",

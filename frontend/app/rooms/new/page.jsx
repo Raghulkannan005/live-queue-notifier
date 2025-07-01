@@ -10,12 +10,15 @@ export default function CreateRoomPage() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
-    const { token, fetchToken } = useAuthStore();
+    const { user } = useAuthStore();
     const router = useRouter();
 
-    useEffect(() => {
-        fetchToken();
-    }, [fetchToken]);
+     useEffect(() => {
+        if (user && user.role !== "owner" && user.role !== "admin") {
+            router.replace("/unauthorized");
+            return null;
+        }
+    }, [user, router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,7 +29,7 @@ export default function CreateRoomPage() {
             const res = await create_room({
                 name: name.trim(),
                 description: description.trim()
-            }, token);
+            }, user.token);
             setSuccess(true);
             setName("");
             setDescription("");

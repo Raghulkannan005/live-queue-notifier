@@ -3,22 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { get_rooms } from '@/utils/api';
-
 import useAuthStore from '@/store/authStore';
 
 export default function RoomsPage() {
+
     const [refresh, setRefresh] = useState(false);
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { token, fetchToken } = useAuthStore();
+
+    const { user } = useAuthStore();
+
+    useEffect(() => {
+        if (!user.token) {
+            window.location.href = "/api/auth/signin";
+        }
+    }, []);
 
     async function fetchRooms() {
         setLoading(true);
-        if (!token) {
-            await fetchToken();
-        }
         try {
-            const res = await get_rooms(token);
+            const res = await get_rooms(user.token);
             setRooms(res.data);
         } catch (err) {
             setRooms([]);
@@ -39,8 +43,10 @@ export default function RoomsPage() {
 
     return (
         <main className="max-w-3xl min-h-screen mx-auto p-6">
+            
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-4xl font-bold text-cyan-700">Rooms</h1>
+
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={handleRefresh}
@@ -53,12 +59,14 @@ export default function RoomsPage() {
                     >
                         {loading ? 'Refreshing...' : 'Refresh'}
                     </button>
-                    <Link
-                        href="/rooms/new"
-                        className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-4 py-2 rounded-full shadow"
-                    >
-                        Create Room
-                    </Link>
+                   {(user.role === 'admin' || user.role === 'owner') && (
+                        <Link
+                            href="/rooms/new"
+                            className="px-4 py-2 bg-cyan-600 text-white rounded-full hover:bg-cyan-700 transition"
+                        >
+                            Create Room
+                        </Link>
+                    )}
                 </div>
             </div>
             {loading ? (
@@ -74,8 +82,8 @@ export default function RoomsPage() {
                                 {room.description && (
                                     <div className="text-slate-600 text-sm">{room.description}</div>
                                 )}
-                                <div className="text-cyan-600 text-xs mt-1">
-                                    Queue count: {room.queueCount ?? (room.usersInQueue ? room.usersInQueue.length : 0)}
+                                <div className="text-cyan-600 text-sm mt-1">
+                                    Queue count: { room.queueCount }
                                 </div>
                             </div>
                             <Link
