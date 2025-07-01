@@ -1,14 +1,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import useAuthStore from "@/store/authStore";
 
 export default function AdminPage() {
-    const { user } = useAuthStore()
+    const { user, isAuthenticated } = useAuthStore();
     const router = useRouter();
 
-    if (!user || user.role !== 'admin') {
-        router.push('/unauthorized');
+    useEffect(() => {
+        if (isAuthenticated && user && user.role !== 'admin') {
+            router.push('/unauthorized');
+        }
+    }, [user, isAuthenticated, router]);
+
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-[#f5faff] via-[#eaf3fb] to-[#f5faff] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+            </div>
+        );
+    }
+
+    if (user.role !== 'admin') {
         return null;
     }
     return (

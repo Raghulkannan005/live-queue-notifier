@@ -145,7 +145,7 @@ export default function RoomQueuePage() {
 
     // Initialize socket connection
     useEffect(() => {
-        if (!user?.token) return;
+        if (!user?.token || typeof window === 'undefined') return;
 
         const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL, {
             auth: {

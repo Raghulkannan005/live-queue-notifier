@@ -13,10 +13,9 @@ export default function CreateRoomPage() {
     const { user } = useAuthStore();
     const router = useRouter();
 
-     useEffect(() => {
+    useEffect(() => {
         if (user && user.role !== "owner" && user.role !== "admin") {
             router.replace("/unauthorized");
-            return null;
         }
     }, [user, router]);
 

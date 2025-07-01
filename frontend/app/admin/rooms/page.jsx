@@ -17,7 +17,6 @@ export default function AdminRoomsPage() {
     useEffect(() => {
         if (user && user.role !== 'admin' && user.role !== 'owner') {
             router.push('/unauthorized');
-            return;
         }
     }, [user, router]);
 
@@ -58,6 +57,14 @@ export default function AdminRoomsPage() {
             fetchOwnedRooms();
         }
     }, [user?.token]);
+
+    if (!user || (user.role !== 'admin' && user.role !== 'owner')) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

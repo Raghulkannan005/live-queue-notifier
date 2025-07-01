@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
-export default function AuthError() {
+export default function AuthErrorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");

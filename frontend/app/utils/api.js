@@ -24,7 +24,9 @@ const apiRequest = async (url, options = {}) => {
       return fetch(url, options);
     } else {
       // Redirect to login if refresh fails
-      window.location.href = '/auth/error?error=TokenExpired';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/error?error=TokenExpired';
+      }
       throw new Error('Authentication failed');
     }
   }
@@ -78,7 +80,9 @@ export const apiCallWithRefresh = async (url, options, token) => {
           });
         } catch (refreshError) {
           // Refresh failed, redirect to login
-          window.location.href = '/auth/signin';
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/signin';
+          }
           throw refreshError;
         }
       }
