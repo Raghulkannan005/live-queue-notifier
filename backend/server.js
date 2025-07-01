@@ -19,9 +19,8 @@ const app = express();
 app.use(express.json());
 app.use(helmet());
 
-const allowedOrigins = [process.env.FRONTEND_URL];
 app.use(cors({
-  origin: allowedOrigins
+  origin: process.env.FRONTEND_URL
 }));
 
 const limiter = rateLimit({
