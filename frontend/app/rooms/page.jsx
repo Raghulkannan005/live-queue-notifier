@@ -13,12 +13,6 @@ export default function RoomsPage() {
 
     const { user } = useAuthStore();
 
-    useEffect(() => {
-        if (!user.token) {
-            window.location.href = "/api/auth/signin";
-        }
-    }, []);
-
     async function fetchRooms() {
         setLoading(true);
         try {

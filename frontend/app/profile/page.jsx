@@ -1,26 +1,10 @@
 'use client';
 
 import useAuthStore from "@/store/authStore";
-import TestSocketLogger from "@/utils/TestSocketLogger";
 
 export default function UserPage() {
 
   const { user } = useAuthStore();
-
-  const runEmitTest = async() => { 
-    try{
-      const res = await fetch("http://localhost:5000/admin/emit", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${user.token}`
-      }
-    });
-    const data = await res.json();
-    console.log("Test emit response:", data);
-  } catch (error) {
-    console.error("Error emitting test event:", error);
-  }
-};
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-slate-50 to-cyan-50 flex flex-col items-center">
@@ -31,7 +15,6 @@ export default function UserPage() {
             My Profile
           </h1>
           <button className="bg-cyan-600 text-white px-4 py-2 rounded-full hover:bg-cyan-700 transition" onClick={runEmitTest}>Test Emit</button>
-          <TestSocketLogger />
           <p className="text-base text-cyan-700 font-semibold tracking-wide uppercase mb-2 z-10 relative">
             Account Overview
           </p>

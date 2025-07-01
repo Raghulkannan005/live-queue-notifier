@@ -61,15 +61,3 @@ export const demote = async (req, res) => {
         res.status(500).json({ message: "Failed to demote user." });
     }
 };
-
-export const testEmit = async (req, res) => {
-
-  req.io.emit("queue:update", {
-    message: "This is a test queue:update broadcast"
-  });
-
-  res.status(200).json({
-    message: "Test event fired",
-    testData: Date.now()
-  });
-};

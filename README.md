@@ -95,14 +95,6 @@ cd ../frontend && npm install
 
 ---
 
-## 📸 Screenshots
-
-<p align="center">
-    <img src="https://user-images.githubusercontent.com/placeholder/waitless-demo.gif" width="700" alt="Demo" />
-</p>
-
----
-
 ## 🛠️ Contributing
 
 Contributions are welcome! Please open issues or pull requests.
