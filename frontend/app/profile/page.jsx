@@ -14,8 +14,7 @@ export default function UserPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-2 drop-shadow-lg z-10 relative">
             My Profile
           </h1>
-          <button className="bg-cyan-600 text-white px-4 py-2 rounded-full hover:bg-cyan-700 transition" onClick={runEmitTest}>Test Emit</button>
-          <p className="text-base text-cyan-700 font-semibold tracking-wide uppercase mb-2 z-10 relative">
+           <p className="text-base text-cyan-700 font-semibold tracking-wide uppercase mb-2 z-10 relative">
             Account Overview
           </p>
         </div>
