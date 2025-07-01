@@ -1,6 +1,5 @@
 import express from "express";
 import http from "http";
-import https from "https";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -33,13 +32,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-const url = process.env.API_URL;
-const client = url.startsWith("https") ? https : http;
-
 connectDB();
 job.start();
 
-const server = client.createServer(app);
+const server = http.createServer(app);
 
 const io = createSocketServer(server);
 
