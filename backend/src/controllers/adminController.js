@@ -1,0 +1,75 @@
+import User from "../models/user.model.js";
+
+export const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, "-password");
+        res.status(200).json({
+            message: "Users fetched successfully",
+            users : users
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch users." });
+    }
+};
+
+export const getUserById = async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const user = await User.findById(userId, "-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        res.status(200).json({
+            message: "User fetched successfully",
+            user: user
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch user." });
+    }
+};
+
+export const promote = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const toRole = req.body.role || "manager";
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { role: toRole }
+        );
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        res.json({ message: `User - ${user.name} promoted from ${user.role} to ${toRole}.` });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to promote user." });
+    }
+};
+
+export const demote = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const toRole = req.body.role || "user";
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { role: toRole }
+        );
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        res.json({ message: `User - ${user.name} demoted from ${user.role} to ${toRole}.` });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to demote user." });
+    }
+};
+
+export const testEmit = async (req, res) => {
+
+  req.io.emit("queue:update", {
+    message: "This is a test queue:update broadcast"
+  });
+
+  res.status(200).json({
+    message: "Test event fired",
+    testData: Date.now()
+  });
+};

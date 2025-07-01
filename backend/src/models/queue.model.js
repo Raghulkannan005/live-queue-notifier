@@ -10,7 +10,7 @@ const queueSchema = new mongoose.Schema({
     ref: 'Room',
     required: true
   },
-  placeInQueue: {
+  position: {
     type: Number,
     required: true,
     default: 0

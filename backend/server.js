@@ -12,6 +12,7 @@ import { createSocketServer } from "./src/config/socket.js";
 import authRouter from "./src/routes/authRouter.js";
 import queueRouter from "./src/routes/queueRouter.js";
 import roomRouter from "./src/routes/roomRouter.js";
+import adminRouter from "./src/routes/adminRouter.js";
 
 dotenv.config();
 
@@ -35,7 +36,7 @@ app.use(limiter);
 const url = process.env.API_URL;
 const client = url.startsWith("https") ? https : http;
 
-await connectDB();
+connectDB();
 job.start();
 
 const server = client.createServer(app);
@@ -50,6 +51,8 @@ app.use((req, res, next) => {
 app.use("/auth", authRouter);
 app.use("/queue", queueRouter);
 app.use("/room", roomRouter);
+app.use("/admin", adminRouter)
+
 
 app.get("/", (req, res) => {
   res.sendFile(process.cwd() + "/welcome.html");

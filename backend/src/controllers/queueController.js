@@ -1,77 +1,147 @@
 import Queue from "../models/queue.model.js";
 import Room from "../models/room.model.js";
-import User from "../models/user.model.js";
+
+const getQueue = async (roomId) => {
+  return await Queue.find({ roomId: roomId })
+    .sort("position")
+    .populate("userId", "name email image");
+};
 
 export const joinQueue = async (req, res) => {
-  const { roomId } = req.body;
-  const userEmail = req.user.email;
-
-  if (!roomId || !userEmail) {
-    return res.status(400).json({
-      message: "roomId and userEmail required"
-    });
-  }
-
   try {
-    const user = await User.findOne({
-      email: userEmail
-    });
-    if (!user) return res.status(404).json({
-      message: "User not found"
-    });
+    const userId = req.user.id;
+    const { roomId } = req.params;
 
     const room = await Room.findById(roomId);
-    if (!room) return res.status(404).json({
-      message: "Room not found"
-    });
-
-    const existing = await Queue.findOne({
-      userEmail, roomId, status: "waiting"
-    });
-    if (existing) {
-      return res.status(200).json({
-        message: "Already in queue",
-        queue: existing
-      });
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
     }
 
-    const place = await Queue.countDocuments({ roomId, status: "waiting" }) + 1;
+    const existingEntry = await Queue.findOne({
+      roomId: roomId,
+      userId: userId,
+    });
+    if (existingEntry) {
+      return res.status(400).json({ error: "User already in queue" });
+    }
 
-    const queueEntry = await Queue.create({
-      userId: user._id,
-      roomId,
-      placeInQueue: place,
-      status: "waiting"
+    const position =
+      (await Queue.countDocuments({ roomId: roomId })) + 1;
+
+      const addUserToRoom = await Room.findByIdAndUpdate(
+        roomId,
+        { $addToSet: { usersInRoom: userId }, $inc: { queueCount: 1 } },
+        { new: true }
+      );
+
+    const newEntry = await Queue.create({
+      userId: userId,
+      roomId: roomId,
+      position,
+      joinedAt: new Date(),
+    });
+    console.log("New queue entry created:", newEntry);
+
+    req.io.to(roomId).emit("queue:update", {
+      message : "Queue updated",
+      roomId: roomId,
+      queue: await getQueue(roomId)
     });
 
-    room.usersInQueue.push(user._id);
-    room.queueCount += 1;
-    await room.save();
-
-    user.currentQueues.push(queueEntry._id);
-    await user.save();
-
-    req.io.to(roomId).emit("queueUpdate", {
-      message: `User ${user.name} joined the queue.`,
-      queueEntry
-    });
-
-    return res.status(201).json({
-      message: "Joined queue",
-      queue: queueEntry
+    res.status(201).json({
+      message: "User joined queue",
+      position,
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({
-      message: "Server error"
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const leaveQueue = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { roomId } = req.params;
+
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    const removed = await Queue.findOneAndDelete({
+      roomId,
+      userId,
+      status: "waiting"
     });
+
+    if (!removed) {
+      return res.status(400).json({ error: "User not in queue" });
+    }
+
+    const entries = await Queue.find({ roomId, status: "waiting" }).sort("joinedAt");
+    const bulkOps = entries.map((entry, index) => ({
+      updateOne: {
+        filter: { _id: entry._id },
+        update: { $set: { position: index + 1 } }
+      }
+    }));
+    if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
+
+    const updatedQueue = await getQueue(roomId);
+    req.io.to(roomId).emit("queue:update", {
+      message: "Queue updated",
+      roomId,
+      queue: updatedQueue
+    });
+
+    res.status(200).json({ message: "User left queue" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const kickFromQueue = async (req, res) => {
+  const { queueId } = req.params;
+
+  if (!queueId) return res.status(400).json({ message: "queueId required" });
+
+  try {
+    const queue = await Queue.findById(queueId);
+    if (!queue) return res.status(404).json({ message: "Queue not found" });
+
+    const roomId = queue.roomId;
+    await Queue.findByIdAndDelete(queueId);
+
+    const entries = await Queue.find({ roomId, status: "waiting" }).sort("joinedAt");
+    const bulkOps = entries.map((entry, index) => ({
+      updateOne: {
+        filter: { _id: entry._id },
+        update: { $set: { position: index + 1 } }
+      }
+    }));
+    if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
+
+    if (req.io && roomId) {
+      const updatedQueue = await Queue.find({ roomId, status: "waiting" }).sort("position");
+      req.io.to(roomId.toString()).emit("queue:update", {
+        message: "Queue updated",
+        roomId,
+        queue: updatedQueue
+      });
+    }
+
+    res.status(200).json({ message: "User kicked from queue" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 export const cancelQueue = async (req, res) => {
   const { queueId } = req.body;
   const userRole = req.user.role;
-  const userId = req.user.sub;
+  const userId = req.user.id;
 
   if (!queueId) return res.status(400).json({ message: "queueId required" });
 
@@ -92,7 +162,6 @@ export const cancelQueue = async (req, res) => {
     queue.status = "cancelled";
     await queue.save();
 
-    // update Room
     const room = await Room.findById(queue.roomId);
     if (room) {
       room.usersInQueue = room.usersInQueue.filter(id => id.toString() !== queue.userId.toString());
@@ -113,42 +182,6 @@ export const cancelQueue = async (req, res) => {
   }
 };
 
-export const adjustQueuePosition = async (req, res) => {
-  const { queueId, direction } = req.body;
-  const userRole = req.user.role;
-
-  if (!queueId || !direction) {
-    return res.status(400).json({ message: "queueId and direction required" });
-  }
-
-  if (userRole !== "admin" && userRole !== "owner" && userRole !== "manager") {
-    return res.status(403).json({ message: "Not allowed" });
-  }
-
-  try {
-    const queue = await Queue.findById(queueId);
-    if (!queue) return res.status(404).json({ message: "Queue not found" });
-
-    if (direction === "up") {
-      queue.placeInQueue = Math.max(1, queue.placeInQueue - 1);
-    } else if (direction === "down") {
-      queue.placeInQueue += 1;
-    }
-
-    await queue.save();
-
-    req.io.to(queue.roomId.toString()).emit("queueUpdate", {
-      message: `Queue position changed`,
-      queue
-    });
-
-    res.status(200).json({ message: "Queue position updated", queue });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 export const getQueuesByRoom = async (req, res) => {
   const { roomId } = req.params;
 
@@ -161,16 +194,44 @@ export const getQueuesByRoom = async (req, res) => {
     if (!room) return res.status(404).json({ message: "Room not found" });
 
     const queues = await Queue.find({ roomId, status: "waiting" })
-      .populate('userId', 'name email profileImage')
-      .sort({ placeInQueue: 1 });
+      .populate('userId')
+      .sort({ position: 1 });
+      console.log("Queues:", queues);
 
-    return res.status(200).json({ 
-      message: "Queues fetched successfully", 
+    return res.status(200).json({
+      message: "Queues fetched successfully",
       queue: queues,
       room: room
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const get_user_queues =  async (req, res) => {
+  try {
+    const requestedUserId = req.params.userId;
+    const loggedInUserId = req.user.id;
+
+    if (requestedUserId !== loggedInUserId) {
+      return res.status(403).json({ message: "Unauthorized to view these queues." });
+    }
+
+    const queues = await Queue.find({ userId: requestedUserId })
+      .populate("roomId", "name");
+
+    const formatted = queues.map(q => ({
+      _id: q._id,
+      roomId: q.roomId._id,
+      roomName: q.roomId.name,
+      status: q.status,
+      position: q.position
+    }));
+
+    res.status(200).json({ queues: formatted });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 };

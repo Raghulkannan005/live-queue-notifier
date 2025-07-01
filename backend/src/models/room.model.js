@@ -5,7 +5,7 @@ const roomSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    usersInQueue: [{
+    usersInRoom: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],

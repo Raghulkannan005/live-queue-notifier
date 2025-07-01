@@ -21,13 +21,13 @@ export const googleLogin = async (req, res) => {
     }
 
     const payload = {
-      sub: user._id.toString(),
+      id: user._id.toString(),
       email: user.email,
       role: user.role || "user",
       name: user.name,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "1d" });
 
     return res.status(200).json({
       message: user ? "Login successful" : "User created successfully",
@@ -51,7 +51,10 @@ export const getRole = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    return res.status(200).json({ role: user.role });
+    return res.status(200).json({
+      role: user.role,
+      id: user._id
+    });
   } catch (error) {
     console.error("Error fetching user role:", error.message);
     return res.status(500).json({ message: "Internal server error" });

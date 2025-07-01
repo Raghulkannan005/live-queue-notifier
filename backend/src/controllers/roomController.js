@@ -1,13 +1,11 @@
 import Room from "../models/room.model.js";
 import Queue from "../models/queue.model.js";
-import User from "../models/user.model.js";
 
 export const createRoom = async (req, res) => {
   const { name, description } = req.body;
-  
-  const creatorEmail = req.user.email;
-  const creator = await User.findOne({ email: creatorEmail });
-  const createdBy = creator._id;
+
+  const creator = req.user;
+  const createdBy = creator.id;
 
   if (!name) return res.status(400).json({ message: "Room name required" });
 
@@ -37,7 +35,7 @@ export const deleteRoom = async (req, res) => {
 
   try {
     await Room.findByIdAndDelete(roomId);
-    await Queue.deleteMany({ roomId });  // remove queues
+    await Queue.deleteMany({ roomId });
     res.status(200).json({ message: "Room deleted" });
   } catch (err) {
     console.error(err);
@@ -71,7 +69,7 @@ export const getRoom = async (req, res) => {
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
-    console.log("Fetched room:", room);
+
     res.status(200).json({ message: "Room fetched", data: room });
   } catch (err) {
     console.error(err);

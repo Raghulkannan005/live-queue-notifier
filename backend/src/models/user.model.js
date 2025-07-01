@@ -1,10 +1,14 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  name: String,
+  name: {
+    type: String,
+    required: true,
+  },
   email: {
     type: String,
-    unique: true
+    unique: true,
+    required: true,
   },
   role: {
     type: String,
@@ -26,10 +30,7 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    currentQueues : [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Queue'
-    }]
+
 });
 
 const User = mongoose.model('User', userSchema);
