@@ -37,6 +37,12 @@ export default function AdminPage() {
                         onClick={() => router.push("/rooms")}
                         className="flex-1 cursor-pointer bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold px-8 py-4 rounded-xl shadow-md transition-all duration-200 text-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
                     >
+                        Browse Rooms
+                    </button>
+                    <button
+                        onClick={() => router.push("/admin/rooms")}
+                        className="flex-1 cursor-pointer bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl shadow-md transition-all duration-200 text-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    >
                         Manage Rooms
                     </button>
                 </div>

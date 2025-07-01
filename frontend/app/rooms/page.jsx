@@ -37,7 +37,6 @@ export default function RoomsPage() {
 
     return (
         <main className="max-w-3xl min-h-screen mx-auto p-6">
-            
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-4xl font-bold text-cyan-700">Rooms</h1>
 

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { get_room, join_queue, leave_queue, get_queues_by_room, kick_from_queue } from "@/utils/api";
+import { io } from "socket.io-client";
+import { get_room, join_queue, leave_queue, get_queues_by_room, kick_from_queue, cancel_queue } from "@/utils/api";
 import useAuthStore from "@/store/authStore";
 import { toast } from "react-hot-toast";
+import { connectSocket, getSocket } from "@/utils/socket";
 
 export default function RoomQueuePage() {
     const params = useParams();
@@ -16,12 +18,9 @@ export default function RoomQueuePage() {
     const [userInQueue, setUserInQueue] = useState(false);
     const [Refresh, setRefresh] = useState(false);
     const [queue, setQueue] = useState([]);
+    const [socket, setSocket] = useState(null);
 
     const { user } = useAuthStore();
-
-    const refreshScreen = () => {
-        setRefresh(!Refresh);
-    };
 
     async function fetchRoom() {
         setLoading(true);
@@ -43,14 +42,16 @@ export default function RoomQueuePage() {
             toast.dismiss();
             if (res.message) {
                 toast.success(res.message);
+                setUserInQueue(true);
             }
             if (res.error) {
                 toast.error(res.error);
                 return;
             }
-            refreshScreen();
+            await fetchQueue();
         } catch (err) {
             console.error("Error joining queue:", err);
+            toast.dismiss();
             toast.error("Failed to join queue. Please try again.");
         } finally {
             setActionLoading(false);
@@ -70,9 +71,10 @@ export default function RoomQueuePage() {
             if (res.error) {
                 toast.error(res.error);
             }
-            refreshScreen();
+            await fetchQueue();
         } catch (err) {
             console.error("Error leaving queue:", err);
+            toast.dismiss();
             toast.error("Failed to leave queue. Please try again.");
         } finally {
             setActionLoading(false);
@@ -82,20 +84,24 @@ export default function RoomQueuePage() {
     const fetchQueue = async () => {
         try {
             const res = await get_queues_by_room(roomId, user.token);
-            setQueue(res.queue);
+            setQueue(res.queue || []);
 
             if (res.room) {
                 setRoom(res.room);
             }
 
-            if (res.queue && res.queue.length > 0) {
-                const isInQueue = res.queue.some(q => q.userId === user.id);
+            if (res.queue && res.queue.length > 0 && user?.id) {
+                const isInQueue = res.queue.some(q => 
+                    q.userId?._id === user.id || q.userId?.id === user.id || q.userId === user.id
+                );
                 setUserInQueue(isInQueue);
             } else {
                 setUserInQueue(false);
             }
         } catch (err) {
             console.error("Error fetching queue:", err);
+            setQueue([]);
+            setUserInQueue(false);
         }
     };
 
@@ -111,19 +117,78 @@ export default function RoomQueuePage() {
             if (res.error) {
                 toast.error(res.error);
             }
-            refreshScreen();
+            await fetchQueue();
         } catch (err) {
             console.error("Error kicking from queue:", err);
             toast.error("Failed to kick from queue. Please try again.");
         }
     }
 
+    const handleCancelQueue = async (queueId) => {
+        if(!confirm("Are you sure you want to cancel this queue entry?")) {
+            return;
+        }
+        try {
+            const res = await cancel_queue(queueId, user.token);
+            if (res.message) {
+                toast.success(res.message);
+            }
+            if (res.error) {
+                toast.error(res.error);
+            }
+            await fetchQueue();
+        } catch (err) {
+            console.error("Error canceling queue:", err);
+            toast.error("Failed to cancel queue. Please try again.");
+        }
+    }
+
+    // Initialize socket connection
     useEffect(() => {
-        if (roomId) {
+        if (!user?.token) return;
+
+        const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL, {
+            auth: {
+                token: user.token
+            }
+        });
+
+        newSocket.on('connect', () => {
+            console.log('Connected to socket server');
+            // Join room for real-time updates
+            newSocket.emit('joinRoom', roomId);
+        });
+
+        newSocket.on('queue:update', (data) => {
+            console.log('Queue update received:', data);
+            if (data.roomId === roomId) {
+                setQueue(data.queue || []);
+                // Update user queue status
+                if (data.queue && data.queue.length > 0 && user?.id) {
+                    const isInQueue = data.queue.some(q => 
+                        q.userId?._id === user.id || q.userId?.id === user.id || q.userId === user.id
+                    );
+                    setUserInQueue(isInQueue);
+                } else {
+                    setUserInQueue(false);
+                }
+            }
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.emit('leaveRoom', roomId);
+            newSocket.disconnect();
+        };
+    }, [roomId, user?.token, user?.id]);
+
+    useEffect(() => {
+        if (roomId && user?.token) {
             fetchRoom();
             fetchQueue();
         }
-    }, [roomId, Refresh, user.token]);
+    }, [roomId, user?.token, user?.id]);
 
     if (loading) {
         return (
@@ -213,7 +278,10 @@ export default function RoomQueuePage() {
                                     <div className="flex items-center justify-between">
                                         <h2 className="text-xl font-semibold text-slate-900">Queue Members</h2>
                                         <div className="flex items-center space-x-2">
-                                            <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+                                            </span>
                                             <span className="text-sm text-slate-600">Live</span>
                                             <span className="text-xs text-slate-400 ml-2">
                                                 Updated: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -239,10 +307,35 @@ export default function RoomQueuePage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <span className="inline-flex items-center p-3 rounded-md text-md font-medium bg-green-100 text-green-800">
-                                                    {queueItem.status || "waiting"}
-                                                </span>
-                                                <button className="inline-flex items-center p-3 rounded-md text-md font-medium bg-red-100 cursor-pointer hover:bg-red-600 hover:text-white text-red-800"   onClick={() => handleKickFromQueue(queueItem._id)}>Kick</button>
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
+                                                        {queueItem.status || "waiting"}
+                                                    </span>
+                                                    {(user.role === "admin" || user.role === "owner") && user.id !== queueItem.userId?._id && (
+                                                        <div className="flex space-x-2">
+                                                            <button 
+                                                                className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-red-100 cursor-pointer hover:bg-red-600 hover:text-white text-red-800 transition-colors"
+                                                                onClick={() => handleKickFromQueue(queueItem._id)}
+                                                            >
+                                                                Kick
+                                                            </button>
+                                                            <button 
+                                                                className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-orange-100 cursor-pointer hover:bg-orange-600 hover:text-white text-orange-800 transition-colors"
+                                                                onClick={() => handleCancelQueue(queueItem._id)}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {queueItem.userId?._id === user.id && (
+                                                        <button 
+                                                            className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-yellow-100 cursor-pointer hover:bg-yellow-600 hover:text-white text-yellow-800 transition-colors"
+                                                            onClick={() => handleCancelQueue(queueItem._id)}
+                                                        >
+                                                            Cancel My Queue
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -283,7 +376,7 @@ export default function RoomQueuePage() {
                                         </button>
                                     )}
                                     <button
-                                        onClick={refreshScreen}
+                                        onClick={fetchQueue}
                                         className="w-full bg-white hover:bg-slate-50 border border-slate-300 px-4 py-3 rounded-lg text-slate-700 shadow"
                                     >
                                         Refresh

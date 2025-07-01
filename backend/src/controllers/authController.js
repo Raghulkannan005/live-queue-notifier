@@ -27,7 +27,7 @@ export const googleLogin = async (req, res) => {
       name: user.name,
     };
 
-    const token = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "7d" });
 
     return res.status(200).json({
       message: user ? "Login successful" : "User created successfully",
@@ -63,7 +63,7 @@ export const getRole = async (req, res) => {
 
 export const verifyToken = (req, res) => {
   try {
-    const authHeader = req.headers.Authorization;
+    const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Authorization header missing or invalid" });
@@ -80,5 +80,66 @@ export const verifyToken = (req, res) => {
   } catch (error) {
     console.error("Token verification failed:", error.message);
     return res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+export const refreshToken = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization header missing or invalid" });
+    }
+    
+    const token = authHeader.split(" ")[1];
+    
+    // Try to decode the token even if it's expired to get user info
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        // Token is expired but we can still decode it to get user info
+        decoded = jwt.decode(token);
+      } else {
+        throw error;
+      }
+    }
+    
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    
+    // Get fresh user data from database
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Generate new token
+    const payload = {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role || "user",
+      name: user.name,
+    };
+    
+    const newToken = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "7d" });
+    
+    return res.status(200).json({
+      message: "Token refreshed successfully",
+      token: newToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        profileImage: user.profileImage
+      }
+    });
+    
+  } catch (error) {
+    console.error("Token refresh failed:", error.message);
+    return res.status(401).json({ message: "Token refresh failed" });
   }
 };

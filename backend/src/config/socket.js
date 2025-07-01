@@ -31,12 +31,12 @@ export const createSocketServer = (server) => {
     });
 
     socket.on("joinRoom", (roomId) => {
-      socket.join(roomId);
+      socket.join(roomId.toString());
       console.log(`${socket.id} joined room ${roomId}`);
     });
 
     socket.on("leaveRoom", (roomId) => {
-      socket.leave(roomId);
+      socket.leave(roomId.toString());
       console.log(`${socket.id} left room ${roomId}`);
     });
 
@@ -45,7 +45,7 @@ export const createSocketServer = (server) => {
       console.log(`${socket.id} joining queue for room ${roomId}`);
       // The actual queue joining logic is handled by REST API
       // This socket event is for real-time notifications
-      socket.to(roomId).emit("queueUpdate", {
+      socket.to(roomId.toString()).emit("queueUpdate", {
         message: `User ${socket.user?.email} is joining the queue`,
         action: "join",
         userId: socket.user?.sub
@@ -57,7 +57,7 @@ export const createSocketServer = (server) => {
       console.log(`${socket.id} leaving queue for room ${roomId}`);
       // The actual queue leaving logic is handled by REST API
       // This socket event is for real-time notifications
-      socket.to(roomId).emit("queueUpdate", {
+      socket.to(roomId.toString()).emit("queueUpdate", {
         message: `User ${socket.user?.email} is leaving the queue`,
         action: "leave",
         userId: socket.user?.sub

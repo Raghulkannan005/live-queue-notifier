@@ -1,13 +1,103 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-export const join_queue = async (roomId, token) => {
+// API wrapper with automatic token refresh
+const apiRequest = async (url, options = {}) => {
+  const { default: useAuthStore } = await import("@/store/authStore");
+  const store = useAuthStore.getState();
+  
+  // Check if token is expiring and refresh if needed
+  if (store.isTokenExpiring()) {
+    await store.refreshToken();
+  }
+  
+  const response = await fetch(url, options);
+  
+  // Handle 401 errors by trying to refresh token
+  if (response.status === 401) {
+    const refreshed = await store.refreshToken();
+    if (refreshed) {
+      // Retry the request with new token
+      const newToken = useAuthStore.getState().user.token;
+      if (options.headers) {
+        options.headers.Authorization = `Bearer ${newToken}`;
+      }
+      return fetch(url, options);
+    } else {
+      // Redirect to login if refresh fails
+      window.location.href = '/auth/error?error=TokenExpired';
+      throw new Error('Authentication failed');
+    }
+  }
+  
+  return response;
+};
+
+// Token refresh utility
+export const refreshAuthToken = async (currentToken) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/room/${roomId}/join`, {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${currentToken}`,
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token refresh failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.token;
+  } catch (error) {
+    console.error("refreshAuthToken error:", error);
+    throw error;
+  }
+};
+
+export const apiCallWithRefresh = async (url, options, token) => {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
         Authorization: `Bearer ${token}`,
       }
     });
+
+    if (response.status === 401) {
+      const errorData = await response.json();
+      if (errorData.code === 'TOKEN_EXPIRED') {
+        try {
+          const newToken = await refreshAuthToken(token);
+       return await fetch(url, {
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${newToken}`,
+            }
+          });
+        } catch (refreshError) {
+          // Refresh failed, redirect to login
+          window.location.href = '/auth/signin';
+          throw refreshError;
+        }
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error("apiCallWithRefresh error:", error);
+    throw error;
+  }
+};
+
+export const join_queue = async (roomId, token) => {
+  try {
+    const response = await apiCallWithRefresh(
+      `${API_BASE_URL}/queue/room/${roomId}/join`,
+      { method: "POST" },
+      token
+    );
 
     if (!response.ok) {
       throw new Error(`Error joining queue: ${response.statusText}`);
@@ -22,12 +112,11 @@ export const join_queue = async (roomId, token) => {
 
 export const leave_queue = async (roomId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/room/${roomId}/leave`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
-    });
+    const response = await apiCallWithRefresh(
+      `${API_BASE_URL}/queue/room/${roomId}/leave`,
+      { method: "POST" },
+      token
+    );
 
     if (!response.ok) {
       throw new Error(`Error leaving queue: ${response.statusText}`);
@@ -265,3 +354,44 @@ export const kick_from_queue = async (queueId, token) => {
     throw error;
   }
 }
+
+export const get_owned_rooms = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/room/owned`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error(`Error fetching owned rooms: ${data.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("get_owned_rooms error:", error);
+    throw error;
+  }
+};
+
+export const delete_room = async (roomId, token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/room/${roomId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error deleting room: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("delete_room error:", error);
+    throw error;
+  }
+};

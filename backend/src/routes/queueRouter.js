@@ -18,7 +18,7 @@ router.post("/room/:roomId/leave", verifySession, leaveQueue);
 router.get("/room/:roomId", verifySession, getQueuesByRoom);
 router.get("/user/:userId", verifySession, get_user_queues);
 
-router.delete("/kick/:queueId", verifySession, roleCheck([ "owner", "admin"]), kickFromQueue);
-router.delete("/:queueId", verifySession, roleCheck([ "owner", "admin"]), cancelQueue);
+router.delete("/kick/:queueId", verifySession, roleCheck(["owner", "admin"]), kickFromQueue);
+router.post("/cancel", verifySession, cancelQueue);
 
 export default router;

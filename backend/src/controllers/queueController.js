@@ -26,13 +26,13 @@ export const joinQueue = async (req, res) => {
     }
 
     const position =
-      (await Queue.countDocuments({ roomId: roomId })) + 1;
+      (await Queue.countDocuments({ roomId: roomId, status: "waiting" })) + 1;
 
-      const addUserToRoom = await Room.findByIdAndUpdate(
-        roomId,
-        { $addToSet: { usersInRoom: userId }, $inc: { queueCount: 1 } },
-        { new: true }
-      );
+    const addUserToRoom = await Room.findByIdAndUpdate(
+      roomId,
+      { $addToSet: { usersInRoom: userId }, $inc: { queueCount: 1 } },
+      { new: true }
+    );
 
     const newEntry = await Queue.create({
       userId: userId,
@@ -42,11 +42,23 @@ export const joinQueue = async (req, res) => {
     });
     console.log("New queue entry created:", newEntry);
 
-    req.io.to(roomId).emit("queue:update", {
-      message : "Queue updated",
-      roomId: roomId,
-      queue: await getQueue(roomId)
-    });
+    // Emit to all users in the room
+    const updatedQueue = await getQueue(roomId);
+    if (req.io) {
+      req.io.to(roomId.toString()).emit("queue:update", {
+        message: "Queue updated",
+        roomId: roomId,
+        queue: updatedQueue,
+        action: "join",
+        userId: userId
+      });
+
+      // Also emit to general room for dashboard updates
+      req.io.emit("queue:room:update", {
+        roomId: roomId,
+        queue: updatedQueue
+      });
+    }
 
     res.status(201).json({
       message: "User joined queue",
@@ -87,10 +99,25 @@ export const leaveQueue = async (req, res) => {
     }));
     if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
 
+    // Update room queue count
+    await Room.findByIdAndUpdate(
+      roomId,
+      { $pull: { usersInRoom: userId }, $inc: { queueCount: -1 } },
+      { new: true }
+    );
+
     const updatedQueue = await getQueue(roomId);
-    req.io.to(roomId).emit("queue:update", {
+    req.io.to(roomId.toString()).emit("queue:update", {
       message: "Queue updated",
       roomId,
+      queue: updatedQueue,
+      action: "leave",
+      userId: userId
+    });
+
+    // Also emit to general room for dashboard updates
+    req.io.emit("queue:room:update", {
+      roomId: roomId,
       queue: updatedQueue
     });
 
@@ -111,6 +138,8 @@ export const kickFromQueue = async (req, res) => {
     if (!queue) return res.status(404).json({ message: "Queue not found" });
 
     const roomId = queue.roomId;
+    const kickedUserId = queue.userId;
+    
     await Queue.findByIdAndDelete(queueId);
 
     const entries = await Queue.find({ roomId, status: "waiting" }).sort("joinedAt");
@@ -123,15 +152,35 @@ export const kickFromQueue = async (req, res) => {
     if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
 
     if (req.io && roomId) {
-      const updatedQueue = await Queue.find({ roomId, status: "waiting" }).sort("position");
+      const updatedQueue = await getQueue(roomId);
       req.io.to(roomId.toString()).emit("queue:update", {
         message: "Queue updated",
         roomId,
+        queue: updatedQueue,
+        action: "kick",
+        kickedUserId: kickedUserId
+      });
+
+      // Also emit to general room for dashboard updates
+      req.io.emit("queue:room:update", {
+        roomId: roomId,
         queue: updatedQueue
       });
     }
+    
+    const updatedRoom = await Room.findByIdAndUpdate(
+      roomId,
+      {
+        $inc: { queueCount: -1 },
+        $pull: { usersInRoom: kickedUserId }
+      },
+      { new: true }
+    );
 
-    res.status(200).json({ message: "User kicked from queue" });
+    res.status(200).json({
+      message: "User kicked from queue",
+      updatedRoom: updatedRoom
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -149,33 +198,56 @@ export const cancelQueue = async (req, res) => {
     const queue = await Queue.findById(queueId);
     if (!queue) return res.status(404).json({ message: "Queue not found" });
 
-    // permission
+    // permission - allow admin, owner, or the user who created the queue entry
     if (
       userRole !== "admin" &&
       userRole !== "owner" &&
-      userRole !== "manager" &&
       queue.userId.toString() !== userId
     ) {
       return res.status(403).json({ message: "You do not have permission" });
     }
 
-    queue.status = "cancelled";
-    await queue.save();
+    const roomId = queue.roomId;
+    const cancelledUserId = queue.userId;
 
-    const room = await Room.findById(queue.roomId);
-    if (room) {
-      room.usersInQueue = room.usersInQueue.filter(id => id.toString() !== queue.userId.toString());
-      room.queueCount = Math.max(0, room.queueCount - 1);
-      await room.save();
+    await Queue.findByIdAndDelete(queueId);
+
+    // Reorder remaining queue positions
+    const entries = await Queue.find({ roomId, status: "waiting" }).sort("joinedAt");
+    const bulkOps = entries.map((entry, index) => ({
+      updateOne: {
+        filter: { _id: entry._id },
+        update: { $set: { position: index + 1 } }
+      }
+    }));
+    if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
+
+    // Update room queue count
+    await Room.findByIdAndUpdate(
+      roomId,
+      { $pull: { usersInRoom: cancelledUserId }, $inc: { queueCount: -1 } },
+      { new: true }
+    );
+
+    // Emit queue update
+    if (req.io && roomId) {
+      const updatedQueue = await getQueue(roomId);
+      req.io.to(roomId.toString()).emit("queue:update", {
+        message: "Queue updated",
+        roomId,
+        queue: updatedQueue,
+        action: "cancel",
+        cancelledUserId: cancelledUserId
+      });
+
+      // Also emit to general room for dashboard updates
+      req.io.emit("queue:room:update", {
+        roomId: roomId,
+        queue: updatedQueue
+      });
     }
 
-    // notify
-    req.io.to(queue.roomId.toString()).emit("queueUpdate", {
-      message: `Queue entry cancelled by ${req.user.email}`,
-      queueId: queue._id
-    });
-
-    res.status(200).json({ message: "Queue cancelled" });
+    res.status(200).json({ message: "Queue cancelled successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
