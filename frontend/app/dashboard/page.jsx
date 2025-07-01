@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import useAuthStore from "@/store/authStore";
 import { get_user_queues } from "@/utils/api"; // you should build this API to return queues for a given user
-import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
 
   const [queues, setQueues] = useState([]);
   const [loading, setLoading] = useState(true);
