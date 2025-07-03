@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { googleLogin, getRole, verifyToken, refreshToken } from '../controllers/authController.js';
+import { googleLogin, getRole, verifyToken } from '../controllers/authController.js';
 import { googleLoginSchema, getRoleSchema } from '../validation/auth.js';
 import { validateBody } from '../validation/validateBody.js';
 
@@ -15,6 +15,5 @@ router.post(
   getRole
 );
 router.get("/verify-token", verifyToken);
-router.post("/refresh-token", refreshToken);
 
 export default router;

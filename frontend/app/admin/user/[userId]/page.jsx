@@ -45,6 +45,7 @@ export default function AdminUserDetailsPage() {
       setUserData({ ...userData, role: selectedRole });
       setSelectedRole("");
     } catch (err) {
+      console.error("Promotion failed:", err);
       toast.error("Promotion failed");
     } finally {
       setActionLoading(false);

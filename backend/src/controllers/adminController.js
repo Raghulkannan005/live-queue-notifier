@@ -8,7 +8,8 @@ export const getUsers = async (req, res) => {
             users : users
         });
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch users." });
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ message: "Failed to fetch users." });
     }
 };
 
@@ -24,7 +25,8 @@ export const getUserById = async (req, res) => {
             user: user
         });
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch user." });
+        console.error("Error fetching user:", error);
+        return res.status(500).json({ message: "Failed to fetch user." });
     }
 };
 
@@ -41,7 +43,8 @@ export const promote = async (req, res) => {
         }
         res.json({ message: `User - ${user.name} promoted from ${user.role} to ${toRole}.` });
     } catch (error) {
-        res.status(500).json({ message: "Failed to promote user." });
+        console.error("Error promoting user:", error);
+        return res.status(500).json({ message: "Failed to promote user." });
     }
 };
 
@@ -58,6 +61,7 @@ export const demote = async (req, res) => {
         }
         res.json({ message: `User - ${user.name} demoted from ${user.role} to ${toRole}.` });
     } catch (error) {
-        res.status(500).json({ message: "Failed to demote user." });
+        console.error("Error demoting user:", error);
+        return res.status(500).json({ message: "Failed to demote user." });
     }
 };

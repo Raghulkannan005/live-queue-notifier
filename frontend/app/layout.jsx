@@ -4,6 +4,7 @@ import Footer from '@/components/layout/Footer'
 import { Toaster } from 'react-hot-toast'
 import ClientSocketProvider from './components/provider/ClientSocketProvider'
 
+
 export const metadata = {
   title: 'Waitless Online',
   description: 'Waitless Online - Skip the Queue, Live the Life',

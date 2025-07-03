@@ -6,7 +6,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
 import { connectDB } from "./src/database/db.js";
-import job from "./src/lib/cron.js";
 import { createSocketServer } from "./src/config/socket.js";
 import authRouter from "./src/routes/authRouter.js";
 import queueRouter from "./src/routes/queueRouter.js";
@@ -32,7 +31,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 connectDB();
-job.start();
 
 const server = http.createServer(app);
 
@@ -46,7 +44,7 @@ app.use((req, res, next) => {
 app.use("/auth", authRouter);
 app.use("/queue", queueRouter);
 app.use("/room", roomRouter);
-app.use("/admin", adminRouter)
+app.use("/admin", adminRouter);
 
 
 app.get("/", (req, res) => {

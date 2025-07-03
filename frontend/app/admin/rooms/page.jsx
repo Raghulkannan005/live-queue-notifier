@@ -13,7 +13,6 @@ export default function AdminRoomsPage() {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(null);
 
-    // Check if user is admin
     useEffect(() => {
         if (user && user.role !== 'admin' && user.role !== 'owner') {
             router.push('/unauthorized');
@@ -43,7 +42,7 @@ export default function AdminRoomsPage() {
         try {
             await delete_room(roomId, user.token);
             toast.success("Room deleted successfully");
-            fetchOwnedRooms(); // Refresh the list
+            fetchOwnedRooms();
         } catch (err) {
             console.error("Error deleting room:", err);
             toast.error("Failed to delete room");

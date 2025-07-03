@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import useAuthStore from '@/store/authStore';
-import { create_room } from '@/utils/api';
+import { create_room } from "@/utils/api";
+import useAuthStore from "@/store/authStore";
+import { toast } from "react-hot-toast";
 
 export default function CreateRoomPage() {
     const [name, setName] = useState("");
@@ -15,7 +16,7 @@ export default function CreateRoomPage() {
 
     useEffect(() => {
         if (user && user.role !== "owner" && user.role !== "admin") {
-            router.replace("/unauthorized");
+            router.push('/unauthorized');
         }
     }, [user, router]);
 
