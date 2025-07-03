@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
 const verifySession = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -6,7 +7,10 @@ const verifySession = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET);
-    req.user = decoded;
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(401).json({ message: "Unauthorized: User not found" });
+
+    req.user = user;
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
