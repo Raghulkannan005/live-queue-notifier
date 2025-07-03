@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { get_users, promote_user, demote_user } from "@/utils/api";
+import { get_users, promote_user, demote_user, get_user_by_id } from "@/utils/api";
 import useAuthStore from "@/store/authStore";
 import { toast } from "react-hot-toast";
 
@@ -22,10 +22,9 @@ export default function AdminUserDetailsPage() {
     const fetchUser = async () => {
       try {
         toast.loading("Loading user details...");
-        const res = await get_users(user.token);
-        const found = res.users.find((u) => u._id === userId);
-        setUserData(found || null);
-        if (!found) toast.error("User not found");
+        const res = await get_user_by_id(userId, user.token);
+        setUserData(res.user || null);
+        if (!res.user) toast.error("User not found");
         toast.dismiss();
       } catch (err) {
         toast.error("Failed to load user");
@@ -64,6 +63,22 @@ export default function AdminUserDetailsPage() {
       toast.error("Demotion failed");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      toast.loading("Refreshing user details...");
+      const res = await get_user_by_id(userId, user.token);
+      setUserData(res.user || null);
+      if (!res.user) toast.error("User not found");
+      toast.dismiss();
+      toast.success("User details refreshed");
+    } catch (err) {
+      toast.error("Failed to refresh user data");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,21 +148,27 @@ export default function AdminUserDetailsPage() {
   return (
     <main className="max-w-2xl mx-auto py-12 px-6 bg-gradient-to-br from-cyan-50 to-white min-h-screen">
       <div className="flex items-center gap-6 mb-10">
-        <img
-          src={
-            userData.profileImage ||
-            "https://as2.ftcdn.net/v2/jpg/14/12/74/21/1000_F_1412742147_9Zi2cMBHUV86lgIn9lDfkoAgf8KFr1eT.jpg"
-          }
-          alt={userData.name}
-          className="w-24 h-24 rounded-full border-4 border-cyan-200 shadow object-cover"
-        />
-        <div>
-          <h2 className="text-3xl font-bold text-cyan-800">{userData.name}</h2>
-          <div className="text-slate-500 text-base">{userData.email}</div>
-          <span className="inline-block mt-2 px-3 py-1 text-xs rounded bg-cyan-100 text-cyan-700 font-semibold uppercase tracking-wide">
-            {userData.role}
-          </span>
+        <div className="flex items-center gap-4">
+           <img
+            src={userData.profileImage}
+            alt={userData.name}
+            className="w-16 h-16 rounded-full border-2 border-cyan-200 shadow-sm"
+          />
+          <div>
+            <h2 className="text-3xl font-bold text-cyan-800">{userData.name}</h2>
+            <div className="text-slate-500 text-base">{userData.email}</div>
+            <span className="inline-block mt-2 px-3 py-1 text-xs rounded bg-cyan-100 text-cyan-700 font-semibold uppercase tracking-wide">
+              {userData.role}
+            </span>
+          </div>
         </div>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="ml-auto px-4 py-2 rounded-full bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          Refresh
+        </button>
       </div>
 
       <section className="bg-white rounded-xl shadow p-6 mb-8">

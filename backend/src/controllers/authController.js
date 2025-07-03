@@ -27,7 +27,7 @@ export const googleLogin = async (req, res) => {
       name: user.name,
     };
 
-    const token = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(payload, process.env.NEXTAUTH_SECRET, { expiresIn: "1d" });
 
     return res.status(200).json({
       message: user ? "Login successful" : "User created successfully",

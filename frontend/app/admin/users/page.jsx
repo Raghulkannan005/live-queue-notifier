@@ -39,11 +39,14 @@ export default function AdminUsersPage() {
     <main className="max-w-4xl mx-auto py-10 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-cyan-700">User Management</h1>
-        <select
-          className="border border-cyan-300 rounded px-4 py-2"
-          value={roleFilter}
-          onChange={e => setRoleFilter(e.target.value)}
-        >
+        <div>
+
+        </div>
+          <select
+            className="border border-cyan-300 rounded px-4 py-2"
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value)}
+          >
           <option value="">All Roles</option>
           <option value="user">User</option>
           <option value="manager">Manager</option>
@@ -64,8 +67,7 @@ export default function AdminUsersPage() {
             >
               <img
                 src={
-                  user.profileImage ||
-                  "https://as2.ftcdn.net/v2/jpg/14/12/74/21/1000_F_1412742147_9Zi2cMBHUV86lgIn9lDfkoAgf8KFr1eT.jpg"
+                  user.profileImage
                 }
                 alt={user.name}
                 className="w-14 h-14 rounded-full border-2 border-cyan-200 object-cover"

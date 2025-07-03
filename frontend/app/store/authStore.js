@@ -17,11 +17,17 @@ const useAuthStore = create(
 
       setUser: (user) => set({ user, isAuthenticated: true }),
 
-      clearUser: () =>
+      clearUser: () => {
+        // Clear the state
         set({
           user: { image: "", name: "", email: "", role: "", id: "", token: "" },
           isAuthenticated: false
-        }),
+        });
+        // Force remove from localStorage (though persist middleware should handle this)
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth-storage");
+        }
+      },
 
       fetchSession: async () => {
         const session = await getSession();
@@ -41,6 +47,11 @@ const useAuthStore = create(
     }),
     {
       name: "auth-storage",
+      storage: typeof window !== "undefined" ? localStorage : undefined,
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
+      })
     }
   )
 );
