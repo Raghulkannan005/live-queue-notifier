@@ -36,14 +36,6 @@ export default function About() {
                     </li>
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-                    <a
-                        href="https://github.com/raghulkannan-s/live-queue-notifier"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white font-semibold px-8 py-3 rounded-full shadow-xl transition duration-100 transform hover:scale-105"
-                    >
-                        🚀 View on GitHub
-                    </a>
                     <Link
                         href="/"
                         className="bg-white border border-cyan-200 text-cyan-700 hover:bg-cyan-50 font-medium px-8 py-3 rounded-full shadow transition duration-200 flex items-center justify-center"
