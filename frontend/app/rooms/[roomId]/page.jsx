@@ -143,8 +143,7 @@ export default function RoomQueuePage() {
         }
     }
 
-    // Initialize socket connection
-    useEffect(() => {
+     useEffect(() => {
         if (!user?.token || typeof window === 'undefined') return;
 
         const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL, {
@@ -155,7 +154,6 @@ export default function RoomQueuePage() {
 
         newSocket.on('connect', () => {
             console.log('Connected to socket server');
-            // Join room for real-time updates
             newSocket.emit('joinRoom', roomId);
         });
 
@@ -163,7 +161,6 @@ export default function RoomQueuePage() {
             console.log('Queue update received:', data);
             if (data.roomId === roomId) {
                 setQueue(data.queue || []);
-                // Update user queue status
                 if (data.queue && data.queue.length > 0 && user?.id) {
                     const isInQueue = data.queue.some(q => 
                         q.userId?._id === user.id || q.userId?.id === user.id || q.userId === user.id

@@ -24,7 +24,6 @@ export default function RootLayout({children}) {
             position="bottom-right"
             reverseOrder={false}
             toastOptions={{
-              className: '',
               duration: 1500,
               style: {
                 background: '#363636',
