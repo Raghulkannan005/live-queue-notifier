@@ -40,6 +40,11 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+app.get("/start", (req, res)=>{
+  res.status(200).json({
+    message: "Connected to Server Successfully"
+  });
+})
 
 app.use("/auth", authRouter);
 app.use("/queue", queueRouter);

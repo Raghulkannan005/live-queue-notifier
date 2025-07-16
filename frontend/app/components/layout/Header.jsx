@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { logout, login } from '@/lib/actions/auth';
 import useAuthStore from '@/store/authStore';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 const Header = () => {
     const { fetchSession, isAuthenticated, user, clearUser } = useAuthStore();
@@ -16,6 +17,22 @@ const Header = () => {
             window.location.href = '/dashboard';
         }
     },[])
+
+     const startServer = async () => {
+        try{
+            toast.loading("Connecting to server...");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/start`);
+            const data = await res.json();
+            toast.dismiss();
+            toast.success(data.message);
+        } catch (error) {
+            toast.error("Failed to connect to server");
+            toast.dismiss(error);
+        }
+    };
+    useEffect(() => {
+        startServer();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
