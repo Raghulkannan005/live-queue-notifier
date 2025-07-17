@@ -1,8 +1,26 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+const handle401 = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth-storage');
+    window.location.href = '/';
+  }
+};
+
+const apiCall = async (url, options = {}) => {
+  const response = await fetch(url, options);
+  
+  if (response.status === 401) {
+    handle401();
+    throw new Error('Unauthorized');
+  }
+  
+  return response;
+};
+
 export const join_queue = async (roomId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/room/${roomId}/join`, {
+    const response = await apiCall(`${API_BASE_URL}/queue/room/${roomId}/join`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -22,7 +40,7 @@ export const join_queue = async (roomId, token) => {
 
 export const leave_queue = async (roomId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/room/${roomId}/leave`, {
+    const response = await apiCall(`${API_BASE_URL}/queue/room/${roomId}/leave`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -42,7 +60,7 @@ export const leave_queue = async (roomId, token) => {
 
 export const cancel_queue = async (queueId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/cancel`, {
+    const response = await apiCall(`${API_BASE_URL}/queue/cancel`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,7 +82,7 @@ export const cancel_queue = async (queueId, token) => {
 
 export const get_queues_by_room = async (roomId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/room/${roomId}`, {
+    const response = await apiCall(`${API_BASE_URL}/queue/room/${roomId}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`
@@ -84,7 +102,7 @@ export const get_queues_by_room = async (roomId, token) => {
 
 export const get_rooms = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/room/list`, {
+    const response = await apiCall(`${API_BASE_URL}/room/list`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -105,7 +123,7 @@ export const get_rooms = async (token) => {
 
 export const get_room = async (roomId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/room/${roomId}`, {
+    const response = await apiCall(`${API_BASE_URL}/room/${roomId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -121,7 +139,7 @@ export const get_room = async (roomId, token) => {
 
 export const create_room = async (roomData, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/room/create`, {
+    const response = await apiCall(`${API_BASE_URL}/room/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -143,7 +161,7 @@ export const create_room = async (roomData, token) => {
 
 export const get_users = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/users`, {
+    const response = await apiCall(`${API_BASE_URL}/admin/users`, {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,
@@ -163,7 +181,7 @@ export const get_users = async (token) => {
 
 export const get_user_by_id = async (userId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/user/${userId}`, {
+    const response = await apiCall(`${API_BASE_URL}/admin/user/${userId}`, {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,
@@ -183,7 +201,7 @@ export const get_user_by_id = async (userId, token) => {
 
 export const promote_user = async (userId, role, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/promote/${userId}`, {
+    const response = await apiCall(`${API_BASE_URL}/admin/promote/${userId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -205,7 +223,7 @@ export const promote_user = async (userId, role, token) => {
 
 export const demote_user = async (userId, role, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/demote/${userId}`, {
+    const response = await apiCall(`${API_BASE_URL}/admin/demote/${userId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -232,7 +250,7 @@ export const get_user_queues = async(userId, token) => {
       throw new Error("User ID is required");
     }
     
-    const res = await fetch(`${API_BASE_URL}/queue/user/${userId}`, {
+    const res = await apiCall(`${API_BASE_URL}/queue/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -248,7 +266,7 @@ export const get_user_queues = async(userId, token) => {
 
 export const kick_from_queue = async (queueId, token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/queue/kick/${queueId}`, {
+    const response = await apiCall(`${API_BASE_URL}/queue/kick/${queueId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
