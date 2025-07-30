@@ -126,7 +126,7 @@ export default function RoomsPage() {
                         {rooms.map((room, index) => (
                             <div 
                                 key={room._id} 
-                                className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 animate-fade-in group"
+                                className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-6 hover:shadow-2xl transition-all duration-300  animate-fade-in group"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <div className="flex flex-col h-full">
