@@ -1,20 +1,22 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const handle401 = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth-storage');
-    window.location.href = '/';
-  }
+import useAuthStore from "@/store/authStore";
+
+
+const { clearUser } = useAuthStore.getState();
+
+const handle401 = async() => {
+    clearUser();
 };
 
 const apiCall = async (url, options = {}) => {
   const response = await fetch(url, options);
-  
+
   if (response.status === 401) {
-    handle401();
+    await handle401();
     throw new Error('Unauthorized');
   }
-  
+
   return response;
 };
 

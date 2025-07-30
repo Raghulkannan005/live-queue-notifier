@@ -294,7 +294,7 @@ export default function RoomQueuePage() {
                                                 className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/60 hover:bg-slate-100 transition"
                                             >
                                                 <div className="flex items-center space-x-4">
-                                                    <div className="h-10 w-10 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                                    <div className="h-10 w-10 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
                                                         #{index + 1}
                                                     </div>
                                                     <div>

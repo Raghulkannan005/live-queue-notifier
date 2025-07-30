@@ -51,7 +51,6 @@ export default function DashboardPage() {
 
     newSocket.on('queue:room:update', (data) => {
       console.log('Dashboard queue update received:', data);
-      // Refresh user queues when any queue updates
       fetchQueues();
     });
 
@@ -96,73 +95,76 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Queue Cards */}
-        {queues.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-6 sm:p-8 lg:p-12 text-center">
-            <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-slate-100 mb-4 sm:mb-6">
-              <svg className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-            <h3 className="text-lg sm:text-xl font-medium text-slate-900 mb-2">No active queues</h3>
-            <p className="text-slate-600 mb-6 text-sm sm:text-base max-w-md mx-auto">
-              You're not currently in any queues. Browse available rooms to join one and start saving time.
-            </p>
-            <button
-              onClick={() => router.push('/rooms')}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Find Rooms
-            </button>
+       {queues.length === 0 ? (
+  <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-6 sm:p-8 lg:p-12 text-center">
+    <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-slate-100 mb-4 sm:mb-6">
+      <svg className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+    </div>
+    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Active Queues</h3>
+    <p className="text-slate-600 mb-6 text-sm sm:text-base max-w-md mx-auto">
+      You're not currently in any queues. Browse available rooms and join to save time.
+    </p>
+    <button
+      onClick={() => router.push('/rooms')}
+      className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-cyan-600 hover:bg-cyan-700 font-medium transition-all shadow-md"
+    >
+      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      Find Rooms
+    </button>
+  </div>
+) : (
+  <div className="space-y-4 sm:space-y-6">
+    {queues.map((queue, index) => (
+      <div
+        key={queue._id}
+        className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl animate-fade-in flex flex-col sm:flex-row items-center gap-6"
+        style={{ animationDelay: `${index * 100}ms` }}
+      >
+        {/* LEFT: Position Box */}
+        <div className="flex-shrink-0">
+          <div className="bg-cyan-600 text-white w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-3xl sm:text-2xl font-bold shadow-lg ring-4 ring-cyan-500/30">
+            #{queue.position}
           </div>
-        ) : (
-          <div className="space-y-4 sm:space-y-6">
-            {queues.map((queue, index) => (
-              <div 
-                key={queue._id} 
-                className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3 truncate">
-                      {queue.roomName}
-                    </h3>
-                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-slate-600">
-                      <div className="flex items-center space-x-2">
-                        <div className="h-3 w-3 bg-green-400 rounded-full flex-shrink-0"></div>
-                        <span className="font-medium">Position #{queue.position}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-                        <span className="capitalize">{queue.status}</span>
-                      </div>
-                      {queue.estimatedWait && (
-                        <div className="flex items-center space-x-2">
-                          <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                          </svg>
-                          <span>~{queue.estimatedWait} min</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => router.push(`/rooms/${queue.roomId}`)}
-                    className="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors font-medium text-sm shadow-md hover:shadow-lg"
-                  >
-                    View Queue
-                  </button>
+        </div>
+
+        {/* RIGHT: Queue Info */}
+        <div className="flex-1 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 truncate mb-2">
+                {queue.roomName}
+              </h3>
+              <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+                {/* STATUS */}
+                <div className="flex items-center space-x-2">
+                  <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  <span className="capitalize">{queue.status}</span>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Action Button */}
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => router.push(`/rooms/${queue.roomId}`)}
+                className="px-5 py-2 rounded-lg text-white bg-cyan-600 hover:bg-cyan-700 font-medium text-sm shadow-md hover:shadow-lg transition-all"
+              >
+                View Queue
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
 
         {/* Quick Actions */}
         {queues.length > 0 && (

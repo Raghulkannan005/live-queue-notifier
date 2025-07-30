@@ -18,15 +18,21 @@ const useAuthStore = create(
       setUser: (user) => set({ user, isAuthenticated: true }),
 
       clearUser: () => {
-        // Clear the state
-        set({
-          user: { image: "", name: "", email: "", role: "", id: "", token: "" },
-          isAuthenticated: false
-        });
-        // Force remove from localStorage (though persist middleware should handle this)
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth-storage");
+
+        try{
+            if ( typeof window !== 'undefined' ) {
+                localStorage.removeItem("auth-storage");
+            }else {
+                console.warn("localStorage is not available, cannot clear auth storage");
+            }
+            set({
+                user: { image: "", name: "", email: "", role: "", id: "", token: "" },
+                isAuthenticated: false
+            });
+        } catch (error) {
+            console.error("Error clearing user:", error);
         }
+
       },
 
       fetchSession: async () => {

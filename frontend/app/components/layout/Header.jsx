@@ -13,9 +13,6 @@ const Header = () => {
 
     useEffect(() => {
         fetchSession();
-        if(isAuthenticated){
-            window.location.href = '/dashboard';
-        }
     },[])
 
      const startServer = async () => {

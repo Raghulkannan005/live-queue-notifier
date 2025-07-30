@@ -26,11 +26,7 @@ export default function Home() {
         <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-slate-50 to-cyan-50">
             {/* Hero Section */}
             <section className="relative overflow-hidden">
-                {/* Background decoration */}
-                <div className="absolute inset-0">
-                    <div className="absolute inset-y-0 right-1/2 w-full bg-gradient-to-r from-cyan-50 to-transparent transform skew-y-6 shadow-xl"></div>
-                </div>
-                
+
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-16 lg:pb-20">
                     <div className="text-center animate-fade-in">
                         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-800 mb-4 sm:mb-6 leading-tight">
