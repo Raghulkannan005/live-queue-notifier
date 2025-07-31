@@ -1,5 +1,5 @@
 
-import { createRoom, deleteRoom, getRooms, getRoom, getOwnedRooms } from "../controllers/roomController.js";
+import { createRoom, deleteRoom, getRooms, getRoom, getOwnedRooms, editRoom } from "../controllers/roomController.js";
 import verifySession from "../middlewares/verifySession.js";
 import roleCheck from "../middlewares/roleCheck.js";
 
@@ -13,5 +13,6 @@ router.get("/:roomId", verifySession, getRoom);
 
 router.post("/create", verifySession, roleCheck(["owner", "admin"]), createRoom);
 router.delete("/:roomId", verifySession, roleCheck(["owner", "admin"]), deleteRoom);
+router.put("/:roomId", verifySession, roleCheck(["owner", "admin"]), editRoom);
 
 export default router;

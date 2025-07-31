@@ -1,17 +1,22 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { create_room } from "@/utils/api";
-import useAuthStore from "@/store/authStore";
 
-export default function CreateRoomPage() {
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { get_room, edit_room } from "@/utils/api";
+import useAuthStore from "@/store/authStore";
+import { toast } from "react-hot-toast";
+
+export default function EditRoomPage() {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
+    const [fetchLoading, setFetchLoading] = useState(true);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const { user } = useAuthStore();
     const router = useRouter();
+    const params = useParams();
+    const roomId = params.roomId;
 
     useEffect(() => {
         // Only redirect if user is loaded and doesn't have proper role
@@ -19,6 +24,29 @@ export default function CreateRoomPage() {
             router.push('/unauthorized');
         }
     }, [user, router]);
+
+    useEffect(() => {
+        if (roomId && user?.token) {
+            fetchRoomData();
+        }
+    }, [roomId, user?.token]);
+
+    const fetchRoomData = async () => {
+        try {
+            setFetchLoading(true);
+            const res = await get_room(roomId, user.token);
+            if (res.data) {
+                setName(res.data.name || "");
+                setDescription(res.data.description || "");
+            }
+        } catch (error) {
+            console.error('Error fetching room:', error);
+            toast.error('Failed to fetch room data');
+            router.push('/owner');
+        } finally {
+            setFetchLoading(false);
+        }
+    };
 
     // Add loading state while user data is being fetched
     if (!user) {
@@ -34,27 +62,36 @@ export default function CreateRoomPage() {
         return null; // This will redirect via useEffect
     }
 
+    if (fetchLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+            </div>
+        );
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError("");
 
         try {
-            const res = await create_room({
+            const res = await edit_room(roomId, {
                 name: name.trim(),
                 description: description.trim()
             }, user.token);
+            
+            toast.success('Room updated successfully!');
             setSuccess(true);
-            setName("");
-            setDescription("");
 
             setTimeout(() => {
-                router.push(`/rooms/${res.data._id}`);
-            }, 2000);
+                router.push('/owner');
+            }, 1500);
 
         } catch (error) {
-            console.error('Error creating room:', error);
-            setError(error.message || 'Failed to create room. Please try again.');
+            console.error('Error updating room:', error);
+            setError(error.message || 'Failed to update room. Please try again.');
+            toast.error('Failed to update room');
         } finally {
             setLoading(false);
         }
@@ -73,30 +110,30 @@ export default function CreateRoomPage() {
                 {/* Breadcrumb Navigation */}
                 <nav className="flex items-center space-x-2 text-sm text-slate-600 mb-8">
                     <button
-                        onClick={() => router.push('/rooms')}
+                        onClick={() => router.push('/owner')}
                         className="hover:text-cyan-600 transition-colors duration-200 flex items-center space-x-1 group"
                     >
                         <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                         </svg>
-                        <span>Rooms</span>
+                        <span>Owner Dashboard</span>
                     </button>
                     <span className="text-slate-400">/</span>
-                    <span className="text-slate-900 font-medium">Create New Room</span>
+                    <span className="text-slate-900 font-medium">Edit Room</span>
                 </nav>
 
                 {/* Header Section */}
                 <div className="text-center mb-12">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-2xl shadow-lg mb-6 group hover:scale-105 transition-transform duration-200">
                         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-                        Create New <span className="bg-gradient-to-r from-cyan-600 to-cyan-700 bg-clip-text text-transparent">Room</span>
+                        Edit <span className="bg-gradient-to-r from-cyan-600 to-cyan-700 bg-clip-text text-transparent">Room</span>
                     </h1>
                     <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                        Set up a new queue room for your business or event. Make it easy for customers to join and wait virtually.
+                        Update your room details to keep customers informed and engaged.
                     </p>
                 </div>
 
@@ -111,8 +148,8 @@ export default function CreateRoomPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-green-800 font-semibold">Room Created Successfully!</h3>
-                                    <p className="text-green-700 text-sm mt-1">Redirecting you to your new room...</p>
+                                    <h3 className="text-green-800 font-semibold">Room Updated Successfully!</h3>
+                                    <p className="text-green-700 text-sm mt-1">Redirecting you back to owner dashboard...</p>
                                 </div>
                             </div>
                         </div>
@@ -130,7 +167,7 @@ export default function CreateRoomPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-red-800 font-semibold">Error Creating Room</h3>
+                                    <h3 className="text-red-800 font-semibold">Error Updating Room</h3>
                                     <p className="text-red-700 text-sm mt-1">{error}</p>
                                 </div>
                             </div>
@@ -200,67 +237,38 @@ export default function CreateRoomPage() {
                             </div>
 
                             {/* Submit Button */}
-                            <div className="pt-6">
+                            <div className="pt-6 flex space-x-4">
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/owner')}
+                                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-8 py-4 rounded-2xl transition-all duration-200 text-lg flex items-center justify-center space-x-3"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    <span>Cancel</span>
+                                </button>
                                 <button
                                     type="submit"
                                     disabled={loading || !name.trim()}
-                                    className="w-full bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 disabled:from-slate-300 disabled:to-slate-400 text-white font-semibold px-8 py-4 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed text-lg flex items-center justify-center space-x-3 group"
+                                    className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 disabled:from-slate-300 disabled:to-slate-400 text-white font-semibold px-8 py-4 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 disabled:cursor-not-allowed text-lg flex items-center justify-center space-x-3 group"
                                 >
                                     {loading ? (
                                         <>
                                             <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                                            <span>Creating Room...</span>
+                                            <span>Updating Room...</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                             </svg>
-                                            <span>Create Room</span>
+                                            <span>Update Room</span>
                                         </>
                                     )}
                                 </button>
                             </div>
                         </form>
-                    </div>
-
-                    {/* Feature Highlights */}
-                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-t border-cyan-100 p-6 md:p-8">
-                        <div className="grid md:grid-cols-3 gap-6">
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-slate-800 text-sm">Real-time Updates</h4>
-                                    <p className="text-xs text-slate-600 mt-1">Customers see live queue positions</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-slate-800 text-sm">Easy Management</h4>
-                                    <p className="text-xs text-slate-600 mt-1">Simple tools to manage your queue</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-slate-800 text-sm">Instant Setup</h4>
-                                    <p className="text-xs text-slate-600 mt-1">Ready to use in seconds</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

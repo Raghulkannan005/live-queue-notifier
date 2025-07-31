@@ -20,6 +20,7 @@ export default function AdminRoomsPage() {
     }, [user, router]);
 
     const fetchOwnedRooms = async () => {
+        if (!user?.token) return;
         setLoading(true);
         try {
             const res = await get_owned_rooms(user.token);

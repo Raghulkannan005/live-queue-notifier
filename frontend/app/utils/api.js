@@ -161,6 +161,49 @@ export const create_room = async (roomData, token) => {
   }
 }
 
+export const delete_room = async (roomId, token) => {
+  try {
+    const response = await apiCall(`${API_BASE_URL}/room/${roomId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error deleting room: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("delete_room error:", error);
+    throw error;
+  }
+}
+
+export const edit_room = async (roomId, roomData, token) => {
+  try {
+    const response = await apiCall(`${API_BASE_URL}/room/${roomId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(roomData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error editing room: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("edit_room error:", error);
+    throw error;
+  }
+}
+
 export const get_users = async (token) => {
   try {
     const response = await apiCall(`${API_BASE_URL}/admin/users`, {
@@ -285,3 +328,33 @@ export const kick_from_queue = async (queueId, token) => {
     throw error;
   }
 }
+
+export const get_owned_rooms = async (token) => {
+  try {
+    const response = await apiCall(`${API_BASE_URL}/room/owned`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 404) {
+      // Return empty data for 404 (no owned rooms)
+      return { data: [], message: "No owned rooms found" };
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching owned rooms: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("get_owned_rooms error:", error);
+    // If it's a 404 error, return empty data instead of throwing
+    if (error.message?.includes('404')) {
+      return { data: [], message: "No owned rooms found" };
+    }
+    throw error;
+  }
+};
