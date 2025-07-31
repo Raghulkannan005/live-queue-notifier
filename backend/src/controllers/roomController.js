@@ -36,9 +36,9 @@ export const deleteRoom = async (req, res) => {
   const userId = req.user.id;
 
   if (!roomId) return res.status(400).json({ message: "roomId required" });
-
+  console.log( "Deleting room with ID:", roomId);
   try {
-    const room = await Room.findById(roomId);
+    const room = await Room.findById(roomId.toString());
     if (!room) return res.status(404).json({ message: "Room not found" });
 
     if (userRole !== "admin" && room.createdBy.toString() !== userId) {

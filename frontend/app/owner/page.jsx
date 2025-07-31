@@ -3,29 +3,48 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/authStore';
-import { get_owned_rooms, get_queues_by_room } from '@/utils/api';
-import { toast } from 'react-hot-toast';
+import { get_owned_rooms, get_queues_by_room, delete_room } from '@/utils/api';
+import toast from 'react-hot-toast';
 
 export default function OwnerDashboard() {
-    const { user, isAuthenticated } = useAuthStore();
+    const { user } = useAuthStore();
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [analytics, setAnalytics] = useState({});
     const router = useRouter();
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/auth/error');
+        console.log("user role:", user?.role, "user exists:", !!user, "token exists:", !!user?.token);
+        
+        // Don't proceed if user object doesn't exist yet
+        if (!user) {
+            console.log("No user object, showing loading...");
+            setLoading(true);
             return;
         }
-        if (user && (user?.role !== 'owner' && user?.role !== "admin")) {
+
+        // Don't proceed if role is still loading (undefined)
+        if (user.role === undefined) {
+            console.log("User role still undefined, showing loading...");
+            setLoading(true);
+            return;
+        }
+
+        // Now we have a complete user object with role
+        if (user.role !== 'owner' && user.role !== 'admin') {
+            console.log("User not authorized, redirecting to dashboard...");
             router.push('/dashboard');
             return;
         }
-        if (user?.token) {
+
+        console.log("User authorized, fetching data...");
+        // User is authorized, fetch data
+        if (user.token) {
             fetchOwnerData();
+        } else {
+            setLoading(false);
         }
-    }, [isAuthenticated, user, router]);
+    }, [user, router]);
 
     const fetchOwnerData = async () => {
         try {
@@ -207,6 +226,18 @@ export default function OwnerDashboard() {
                                     >
                                         Edit
                                     </button>
+                                    <button
+                                        onClick={() => {
+                                            const confirmDelete = confirm(`Are you sure you want to delete the room "${room.name}"? This action cannot be undone.`);
+                                            if (confirmDelete) {
+                                                delete_room(room._id, user.token);
+                                            }
+                                        }}
+                                        className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm"
+                                    >
+                                        Delete
+                                    </button>
+                                    
                                 </div>
                             </div>
                         </div>

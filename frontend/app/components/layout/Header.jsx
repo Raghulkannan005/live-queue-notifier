@@ -58,7 +58,7 @@ const Header = () => {
         { href: '/about', label: 'About' },
         ...(isAuthenticated ? [{ href: '/rooms', label: 'Rooms' }] : []),
         ...(isAuthenticated && user?.role === 'admin' ? [{ href: '/admin', label: 'Admin' }] : []),
-        ...(isAuthenticated && user?.role === 'owner' ? [{ href: '/owner', label: 'Owner' }] : [])
+        ...(isAuthenticated && ( user?.role === 'owner' || user?.role === 'admin') ? [{ href: '/owner', label: 'Owner' }] : [])
     ];
 
     return (

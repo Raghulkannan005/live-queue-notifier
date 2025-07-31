@@ -1,6 +1,7 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 import useAuthStore from "@/store/authStore";
+import toast from "react-hot-toast";
 
 
 const { clearUser } = useAuthStore.getState();
@@ -162,6 +163,7 @@ export const create_room = async (roomData, token) => {
 }
 
 export const delete_room = async (roomId, token) => {
+  console.log("Deleting room with ID:", roomId);
   try {
     const response = await apiCall(`${API_BASE_URL}/room/${roomId}`, {
       method: "DELETE",
@@ -175,9 +177,16 @@ export const delete_room = async (roomId, token) => {
       throw new Error(`Error deleting room: ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    toast.success(data.message || "Room deleted successfully");
+
+    return data;
+
+
   } catch (error) {
     console.error("delete_room error:", error);
+    toast.error("Failed to delete room");
     throw error;
   }
 }
